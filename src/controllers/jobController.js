@@ -17,10 +17,28 @@ exports.createJobPosting = async (req, res) => {
 // @route   GET /api/v1/jobs
 // @access  Public
 exports.getAllJobPostings = async (req, res) => {
-    try {
-        const jobs = await JobPosting.find({ status: 'open' })
-            .populate('creator', 'name') // Chỉ để test, sau này sẽ là company name
+     try {
+        // Bắt đầu với một query cơ bản
+        const query = { status: 'open' };
+
+        // 1. Xử lý tìm kiếm theo từ khóa (search)
+        if (req.query.search) {
+            // Tìm kiếm không phân biệt chữ hoa/thường trong cả 'title' và 'description'
+            query.$or = [
+                { title: { $regex: req.query.search, $options: 'i' } },
+                { description: { $regex: req.query.search, $options: 'i' } }
+            ];
+        }
+
+        // 2. Xử lý lọc theo địa điểm (location)
+        if (req.query.location) {
+            query.location = { $regex: req.query.location, $options: 'i' };
+        }
+
+        const jobs = await JobPosting.find(query)
+            .populate('creator', 'name')
             .sort({ createdAt: -1 });
+            
         res.status(200).json({ success: true, count: jobs.length, data: jobs });
     } catch (error) {
         res.status(500).json({ success: false, error: 'Server Error' });

@@ -107,3 +107,25 @@ exports.getApplicationStatus = async (req, res) => {
         res.status(500).json({ success: false, error: 'Server Error' });
     }
 };
+
+// @desc    Get all applications for the logged in user
+// @route   GET /api/v1/applications/me
+// @access  Private (Developer)
+exports.getMyApplications = async (req, res) => {
+    try {
+        const applications = await Application.find({ applicantId: req.user.id })
+            .populate({
+                path: 'jobId',
+                select: 'title location creator', // Lấy các trường cần thiết từ Job
+                populate: {
+                    path: 'creator',
+                    select: 'name' // Lấy tên công ty
+                }
+            })
+            .sort({ createdAt: -1 });
+
+        res.status(200).json({ success: true, count: applications.length, data: applications });
+    } catch (error) {
+        res.status(500).json({ success: false, error: 'Server Error' });
+    }
+};
