@@ -32,3 +32,31 @@ exports.getProblemById = async (req, res) => {
         res.status(500).json({ success: false, error: error.message });
     }
 };
+
+exports.updateProblem = async (req, res) => {
+    try {
+        const problem = await Problem.findByIdAndUpdate(req.params.id, req.body, {
+            new: true,
+            runValidators: true
+        });
+        if (!problem) {
+            return res.status(404).json({ success: false, error: 'Problem not found' });
+        }
+        res.status(200).json({ success: true, data: problem });
+    } catch (error) {
+        res.status(400).json({ success: false, error: error.message });
+    }
+};
+
+exports.deleteProblem = async (req, res) => {
+    try {
+        const problem = await Problem.findById(req.params.id);
+        if (!problem) {
+            return res.status(404).json({ success: false, error: 'Problem not found' });
+        }
+        await problem.deleteOne();
+        res.status(200).json({ success: true, data: {} });
+    } catch (error) {
+        res.status(500).json({ success: false, error: 'Server Error' });
+    }
+};

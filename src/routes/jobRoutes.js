@@ -5,9 +5,14 @@ const {
   getJobById,
   updateJobPosting,
   deleteJobPosting,
+  getMyJobs,
 } = require("../controllers/jobController");
 const { protect, authorize } = require("../middleware/authMiddleware");
-const { applyForJob, getJobApplications, getApplicationStatus } = require('../controllers/applicationController');
+const {
+  applyForJob,
+  getJobApplications,
+  getApplicationStatus,
+} = require("../controllers/applicationController");
 
 const router = express.Router();
 
@@ -15,6 +20,7 @@ router
   .route("/")
   .get(getAllJobPostings)
   .post(protect, authorize("employer", "admin"), createJobPosting);
+router.get("/mine", protect, authorize("employer", "admin"), getMyJobs);
 
 router
   .route("/:id")
@@ -29,6 +35,8 @@ router
   .route("/:jobId/applications")
   .get(protect, authorize("employer", "admin"), getJobApplications);
 
-router.route('/:jobId/application-status').get(protect, authorize('developer'), getApplicationStatus);
+router
+  .route("/:jobId/application-status")
+  .get(protect, authorize("developer"), getApplicationStatus);
 
 module.exports = router;

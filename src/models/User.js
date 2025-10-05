@@ -54,4 +54,15 @@ UserSchema.methods.matchPassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
 };
 
+UserSchema.virtual('developerProfile', {
+    ref: 'DeveloperProfile',
+    localField: '_id',
+    foreignField: 'user',
+    justOne: true
+});
+
+// Đảm bảo toJSON và toObject bao gồm cả virtuals
+UserSchema.set('toJSON', { virtuals: true });
+UserSchema.set('toObject', { virtuals: true });
+
 module.exports = mongoose.model('User', UserSchema);

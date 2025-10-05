@@ -1,5 +1,5 @@
 const express = require('express');
-const { createContest, getAllContests, getContestById, registerForContest, getScoreboard } = require('../controllers/contestController');
+const { createContest, getAllContests, getContestById, registerForContest, getScoreboard, updateContest,deleteContest } = require('../controllers/contestController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 const router = express.Router();
@@ -9,7 +9,9 @@ router.route('/')
     .post(protect, authorize('admin', 'employer'), createContest); // Chỉ admin/employer được tạo
 
 router.route('/:id')
-    .get(getContestById);
+    .get(getContestById)
+    .delete(protect, authorize('admin', 'employer'), deleteContest)
+    .put(protect, authorize('admin', 'employer'), updateContest);
 
 router.route('/:id/register').post(protect, authorize('developer'), registerForContest);
 

@@ -19,12 +19,12 @@ exports.createContest = async (req, res) => {
 // @route   GET /api/v1/contests
 // @access  Public
 exports.getAllContests = async (req, res) => {
-    try {
-        const contests = await Contest.find().populate('creator', 'name');
-        res.status(200).json({ success: true, data: contests });
-    } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
-    }
+  try {
+    const contests = await Contest.find().populate('creator', '_id name');
+    res.status(200).json({ success: true, data: contests });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
 };
 
 // @desc    Get single contest
@@ -141,4 +141,48 @@ exports.getScoreboard = async (req, res) => {
         console.error(error);
         res.status(500).json({ success: false, error: 'Server Error' });
     }
+};
+
+exports.deleteContest = async (req, res) => {
+  try {
+    const contest = await Contest.findById(req.params.id);
+
+    if (!contest) {
+      return res.status(404).json({ success: false, error: "Contest not found" });
+    }
+
+    // Chỉ người tạo hoặc admin mới được xoá
+    if (contest.creator.toString() !== req.user.id && req.user.role !== "admin") {
+      return res.status(403).json({ success: false, error: "Unauthorized" });
+    }
+
+    await Contest.findByIdAndDelete(req.params.id);
+    res.status(200).json({ success: true, data: "Contest deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+exports.updateContest = async (req, res) => {
+  try {
+    const contest = await Contest.findById(req.params.id);
+
+    if (!contest) {
+      return res.status(404).json({ success: false, error: "Contest not found" });
+    }
+
+    // Chỉ cho người tạo hoặc admin chỉnh sửa
+    if (req.user.role !== 'admin' && contest.creator.toString() !== req.user.id) {
+      return res.status(403).json({ success: false, error: "Not authorized" });
+    }
+
+    const updated = await Contest.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
+
+    res.status(200).json({ success: true, data: updated });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
 };

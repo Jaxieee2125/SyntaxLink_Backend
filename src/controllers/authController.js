@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Submission = require('../models/Submission');
 
 // @desc    Register user
 exports.register = async (req, res) => {
@@ -49,4 +50,43 @@ const sendTokenResponse = (user, statusCode, res) => {
         token,
         user: userObject // Luôn luôn sử dụng userObject đã được xử lý
     });
+};
+exports.getLeaderboard = async (req, res) => {
+    try {
+        // Sử dụng Aggregation Pipeline của MongoDB để tính điểm
+        const leaderboard = await Submission.aggregate([
+            // Lọc các bài đã AC
+            { $match: { status: 'Accepted' } },
+            // Gom nhóm theo userId và đếm số bài AC không trùng lặp
+            { $group: {
+                _id: '$userId',
+                problemsSolved: { $addToSet: '$problemId' } // addToSet để đảm bảo không trùng lặp
+            }},
+            // Tra cứu thông tin user từ collection 'users'
+            { $lookup: {
+                from: 'users',
+                localField: '_id',
+                foreignField: '_id',
+                as: 'userInfo'
+            }},
+            // "Unwind" để biến userInfo từ mảng thành object
+            { $unwind: '$userInfo' },
+            // Định dạng lại output
+            { $project: {
+                _id: 0,
+                userId: '$_id',
+                name: '$userInfo.name',
+                problemsSolved: { $size: '$problemsSolved' } // Đếm số lượng phần tử trong mảng problemsSolved
+            }},
+            // Sắp xếp theo số bài giảm dần
+            { $sort: { problemsSolved: -1 } },
+            // Giới hạn top 100
+            { $limit: 100 }
+        ]);
+
+        res.status(200).json({ success: true, data: leaderboard });
+    } catch (error) {
+        console.error("Leaderboard Error:", error);
+        res.status(500).json({ success: false, error: 'Server Error' });
+    }
 };
